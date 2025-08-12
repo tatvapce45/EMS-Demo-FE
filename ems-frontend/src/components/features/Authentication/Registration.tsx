@@ -1,33 +1,26 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import RegistrationHeader from "../../layouts/Login/RegistrationHeader";
 import RegistrationStepIndicator from "./RegistrationStepIndicator";
 import PersonalInfoStep from "./PersonalInfoStep";
 import ProfessionalInfoStep from "./ProfessionalInfoStep";
 import LocationInfoStep from "./LocationInfoStep";
+import type { EmployeeRegistrationModel } from "../../../models/Auth/EmployeeRegistrationModel";
+import { BadgeCheck, CircleAlert, Info, TriangleAlert } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import {
+  createEmployee,
+  getEmployees,
+} from "../../../services/employeeService";
+import { getDepartments } from "../../../services/departmentService";
+import {
+  getCities,
+  getCountries,
+  getStates,
+} from "../../../services/geoService";
 
 interface EmployeeRegistrationProps {
   onBack?: () => void;
   onSuccess?: () => void;
-}
-
-interface FormData {
-  name: string;
-  email: string;
-  mobileNo: string;
-  gender: string;
-  age: string;
-  salary: string;
-  address: string;
-  zipcode: string;
-  position: string;
-  userName: string;
-  hiringDate: string;
-  departmentId: string;
-  countryId: string;
-  stateId: string;
-  cityId: string;
-  reportsTo: string;
-  image: File | null;
 }
 
 interface FormErrors {
@@ -39,7 +32,7 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
   onSuccess,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<EmployeeRegistrationModel>({
     name: "",
     email: "",
     mobileNo: "",
@@ -62,45 +55,150 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [managers, setManagers] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [countries, setCountries] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [states, setStates] = useState<{ id: string; name: string }[]>([]);
+  const [cities, setCities] = useState<{ id: string; name: string }[]>([]);
 
-  const departments = [
-    { id: "1", name: "Engineering" },
-    { id: "2", name: "Human Resources" },
-    { id: "3", name: "Marketing" },
-    { id: "4", name: "Sales" },
-    { id: "5", name: "Finance" },
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const countryData = await getCountries();
+        setCountries(countryData.data.countriesDtos);
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const departmentData = await getDepartments();
+        setDepartments(departmentData.data.departmentDtos);
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const employeeData = await getEmployees();
+        setEmployees(employeeData.data.employeeDtos);
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      }
+    };
+    fetchEmployees();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.position) {
+      setManagers([]);
+      return;
+    }
+
+    const currentPos = positions.find((p) => p.shortName === formData.position);
+    const currentLevel = currentPos ? Number(currentPos.id) : 0;
+
+    const availableManagers = employees.filter((emp) => {
+      const empLevel = positions.find((p) => p.shortName === emp.position)?.id;
+      return empLevel && Number(empLevel) > currentLevel;
+    });
+
+    setManagers(availableManagers);
+    setFormData((prev) => ({ ...prev, reportsTo: "" }));
+  }, [formData.position, employees]);
+
+  useEffect(() => {
+    if (formData.countryId) {
+      const fetchStates = async () => {
+        try {
+          const stateData = await getStates(formData.countryId);
+          setStates(stateData.data.statesDtos || []);
+          setFormData((prev) => ({
+            ...prev,
+            stateId: "",
+            cityId: "",
+          }));
+          setCities([]);
+        } catch (error) {
+          console.error("Error fetching states:", error);
+          setStates([]);
+        }
+      };
+
+      fetchStates();
+    } else {
+      setStates([]);
+      setCities([]);
+      setFormData((prev) => ({
+        ...prev,
+        stateId: "",
+        cityId: "",
+      }));
+    }
+  }, [formData.countryId]);
+
+  useEffect(() => {
+    if (formData.stateId) {
+      const fetchCities = async () => {
+        try {
+          const cityData = await getCities(formData.stateId);
+          setCities(cityData.data.citiesDtos || []);
+          setFormData((prev) => ({
+            ...prev,
+            cityId: "",
+          }));
+        } catch (error) {
+          console.error("Error fetching cities:", error);
+          setCities([]);
+        }
+      };
+
+      fetchCities();
+    } else {
+      setCities([]);
+      setFormData((prev) => ({
+        ...prev,
+        cityId: "",
+      }));
+    }
+  }, [formData.stateId]);
+
+  const genders = [
+    { id: "1", name: "Male" },
+    { id: "2", name: "Female" },
+    { id: "3", name: "Other" },
   ];
 
-  const countries = [
-    { id: "1", name: "United States" },
-    { id: "2", name: "Canada" },
-    { id: "3", name: "United Kingdom" },
-    { id: "4", name: "Australia" },
-  ];
-
-  const states = [
-    { id: "1", name: "California", countryId: "1" },
-    { id: "2", name: "New York", countryId: "1" },
-    { id: "3", name: "Ontario", countryId: "2" },
-    { id: "4", name: "London", countryId: "3" },
-  ];
-
-  const cities = [
-    { id: "1", name: "Los Angeles", stateId: "1" },
-    { id: "2", name: "San Francisco", stateId: "1" },
-    { id: "3", name: "New York City", stateId: "2" },
-    { id: "4", name: "Toronto", stateId: "3" },
-  ];
-
-  const managers = [
-    { id: "1", name: "John Smith - Engineering Manager" },
-    { id: "2", name: "Sarah Johnson - HR Director" },
-    { id: "3", name: "Mike Davis - Marketing Lead" },
-    { id: "4", name: "Lisa Wilson - Sales Director" },
+  const positions = [
+    { id: "1", name: "Trainee", shortName: "Trainee" },
+    { id: "2", name: "Trainee Software Engineer", shortName: "TSE" },
+    { id: "3", name: "Software Engineer", shortName: "SE" },
+    { id: "4", name: "Senior Software Engineer", shortName: "SSE" },
+    { id: "5", name: "Team Lead", shortName: "TL" },
+    { id: "6", name: "Associate Project Manager", shortName: "APM" },
+    { id: "7", name: "Project Manager", shortName: "PM" },
+    { id: "8", name: "Progremme Manager", shortName: "PgM" },
+    { id: "9", name: "Vice President", shortName: "VP" },
+    { id: "10", name: "Cheif Engineering Officer", shortName: "CEO" },
   ];
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement|HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -132,7 +230,6 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
       setFormData((prev) => ({ ...prev, image: file }));
       setErrors((prev) => ({ ...prev, image: "" }));
 
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -149,7 +246,7 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
 
   const validateStep = (step: number): boolean => {
     const newErrors: FormErrors = {};
-
+  
     if (step === 1) {
       if (!formData.name.trim()) newErrors.name = "Name is required";
       if (!formData.email.trim()) newErrors.email = "Email is required";
@@ -169,7 +266,7 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
         newErrors.age = "Age must be between 18 and 100";
       }
     }
-
+  
     if (step === 2) {
       if (!formData.position.trim())
         newErrors.position = "Position is required";
@@ -180,8 +277,12 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
       }
       if (!formData.hiringDate)
         newErrors.hiringDate = "Hiring date is required";
+  
+      if (formData.position.trim() !== "CEO" && !formData.reportsTo) {
+        newErrors.reportsTo = "Manager is required unless position is CEO";
+      }
     }
-
+  
     if (step === 3) {
       if (!formData.address.trim()) newErrors.address = "Address is required";
       if (!formData.countryId) newErrors.countryId = "Country is required";
@@ -189,10 +290,11 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
       if (!formData.cityId) newErrors.cityId = "City is required";
       if (!formData.zipcode.trim()) newErrors.zipcode = "Zipcode is required";
     }
-
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
@@ -206,22 +308,52 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateStep(3)) return;
 
     setIsLoading(true);
+    setErrors({});
 
-    // try {
-    //   // Simulate API call
-    //   await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const data = new FormData();
+      data.append("Name", formData.name);
+      const date = new Date(formData.hiringDate);
+      const localDate = date.toISOString().split("T")[0];
+      data.append("HiringDate", localDate);
 
-    //   console.log('Employee registration data:', formData);
-    //   onSuccess();
-    // } catch (error) {
-    //   setErrors({ submit: 'Registration failed. Please try again.' });
-    // } finally {
-    //   setIsLoading(false);
-    // }
+      data.append("DepartmentId", String(formData.departmentId));
+      data.append("Email", formData.email);
+      data.append("MobileNo", formData.mobileNo);
+      data.append("Gender", formData.gender);
+      data.append("Age", String(formData.age));
+      data.append("Salary", String(formData.salary));
+      data.append("Address", formData.address);
+      data.append("Zipcode", formData.zipcode);
+      data.append("CountryId", String(formData.countryId));
+      data.append("StateId", String(formData.stateId));
+      data.append("CityId", String(formData.cityId));
+      data.append("Position", formData.position);
+      data.append("UserName", formData.userName);
+      data.append("RoleId", String(3));
+      if (formData.reportsTo) {
+        data.append("ReportsTo", String(formData.reportsTo));
+      }
+      if (formData.image) {
+        data.append("ImageFile", formData.image);
+      }
+
+      const response = await createEmployee(data);
+      console.log("✅ Employee created:", response.data);
+    } catch (error: any) {
+      console.error(
+        "❌ Error creating employee:",
+        error.response?.data.message || error.message
+      );
+      setErrors({
+        submit: error.response?.data.message || "Registration failed.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderPersonalInfo = () => (
@@ -232,6 +364,7 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
       errors={errors}
       formData={formData}
       handleInputChange={handleInputChange}
+      genders={genders}
     />
   );
 
@@ -240,6 +373,7 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
       errors={errors}
       formData={formData}
       handleInputChange={handleInputChange}
+      positions={positions}
       departments={departments}
       managers={managers}
     />
@@ -277,7 +411,7 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
 
           <RegistrationStepIndicator currentStep={currentStep} />
 
-          <form onSubmit={handleSubmit}>
+          <form>
             {renderCurrentStep()}
 
             {errors.submit && (
@@ -293,27 +427,29 @@ const EmployeeRegistration: React.FC<EmployeeRegistrationProps> = ({
                 <button
                   type="button"
                   onClick={handlePrevious}
-                  className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 font-medium"
+                  className="px-6 py-3 border-2  border-gray-600 text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 font-medium"
                 >
                   Previous
                 </button>
               ) : (
                 <div></div>
+
               )}
 
               {currentStep < 3 ? (
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/25"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-800 to-purple-800 hover:from-blue-900 hover:to-purple-900 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/25"
                 >
                   Next Step
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   disabled={isLoading}
-                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:hover:scale-100 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/25 disabled:cursor-not-allowed flex items-center"
+                  className="px-6 py-3 bg-gradient-to-r from-green-800 to-blue-800 hover:from-green-900 hover:to-blue-900 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:hover:scale-100 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/25 disabled:cursor-not-allowed flex items-center"
                 >
                   {isLoading ? (
                     <>

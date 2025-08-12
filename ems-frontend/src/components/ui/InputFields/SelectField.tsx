@@ -46,7 +46,7 @@ const SelectInput: React.FC<SelectInputProps> = ({
             ${error
               ? "border-red-600 focus:border-red-400"
               : "border-gray-600 focus:border-blue-400"
-            } text-white placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed`}
+            } text-gray-300 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           <option value="">{placeholder}</option>
           {options.map((opt) => (
@@ -64,3 +64,4 @@ const SelectInput: React.FC<SelectInputProps> = ({
 };
 
 export default SelectInput;
+

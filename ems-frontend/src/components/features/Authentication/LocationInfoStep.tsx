@@ -2,48 +2,30 @@ import InputField from "../../ui/InputFields/InputField";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import SelectInput from "../../ui/InputFields/SelectField";
 import { MapPin } from "lucide-react";
+import type { EmployeeRegistrationModel } from "../../../models/Auth/EmployeeRegistrationModel";
+
 interface FormErrors {
   [key: string]: string;
 }
 
-interface FormData {
-  name: string;
-  email: string;
-  mobileNo: string;
-  gender: string;
-  age: string;
-  salary: string;
-  address: string;
-  zipcode: string;
-  position: string;
-  userName: string;
-  hiringDate: string;
-  departmentId: string;
-  countryId: string;
-  stateId: string;
-  cityId: string;
-  reportsTo: string;
-  image: File | null;
-}
-
 interface LocationInfoStepProps {
   errors: FormErrors;
-  formData: FormData;
+  formData: EmployeeRegistrationModel;
   handleInputChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => void;
-  countries: { id: string; name: string }[];
-  states: { id: string; name: string; countryId: string }[];
-  cities: { id: string; name: string; stateId: string }[];
+  countries: { id: string; name: string; }[];
+  states: { id: string; name: string; }[];
+  cities: { id: string; name: string; }[];
 }
 
 const LocationInfoStep: React.FC<LocationInfoStepProps> = ({
   errors,
   formData,
   handleInputChange,
-  countries,
-  states,
-  cities,
+  countries=[], 
+  states = [],   
+  cities = [],   
 }) => {
   return (
     <div className="space-y-6">
@@ -68,12 +50,14 @@ const LocationInfoStep: React.FC<LocationInfoStepProps> = ({
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SelectInput
+        <SelectInput
             label="Country *"
             name="countryId"
             value={formData.countryId}
             onChange={handleInputChange}
-            options={countries.map((c) => ({ value: c.id, label: c.name }))}
+            options={
+                countries.map((c) => ({ value: c.id, label: c.name }))
+            }
             error={errors.countryId}
           />
 
@@ -84,9 +68,7 @@ const LocationInfoStep: React.FC<LocationInfoStepProps> = ({
             onChange={handleInputChange}
             options={
               formData.countryId
-                ? states
-                    .filter((state) => state.countryId === formData.countryId)
-                    .map((s) => ({ value: s.id, label: s.name }))
+                ? states.map((s) => ({ value: s.id, label: s.name }))
                 : []
             }
             error={errors.stateId}
@@ -100,9 +82,7 @@ const LocationInfoStep: React.FC<LocationInfoStepProps> = ({
             onChange={handleInputChange}
             options={
               formData.stateId
-                ? cities
-                    .filter((city) => city.stateId === formData.stateId)
-                    .map((c) => ({ value: c.id, label: c.name }))
+                ? cities.map((c) => ({ value: c.id, label: c.name }))
                 : []
             }
             error={errors.cityId}

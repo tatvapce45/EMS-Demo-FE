@@ -1,28 +1,9 @@
 import { Mail, Phone, Upload, User, X } from "lucide-react";
 import InputField from "../../ui/InputFields/InputField";
 import SelectField from "../../ui/InputFields/SelectField";
+import type { EmployeeRegistrationModel } from "../../../models/Auth/EmployeeRegistrationModel";
 interface FormErrors {
   [key: string]: string;
-}
-
-interface FormData {
-  name: string;
-  email: string;
-  mobileNo: string;
-  gender: string;
-  age: string;
-  salary: string;
-  address: string;
-  zipcode: string;
-  position: string;
-  userName: string;
-  hiringDate: string;
-  departmentId: string;
-  countryId: string;
-  stateId: string;
-  cityId: string;
-  reportsTo: string;
-  image: File | null;
 }
 
 interface PersonalInfoStepProps {
@@ -30,10 +11,11 @@ interface PersonalInfoStepProps {
   removeImage: () => void;
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   errors: FormErrors;
-  formData: FormData;
+  formData: EmployeeRegistrationModel;
   handleInputChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => void;
+  genders: { id: string; name: string }[];
 }
 
 const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
@@ -43,6 +25,7 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
   errors,
   formData,
   handleInputChange,
+  genders = [],
 }) => {
   return (
     <div className="space-y-6">
@@ -97,14 +80,15 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <InputField 
+        <InputField
           label="Full Name *"
           name="name"
           value={formData.name}
           onChange={handleInputChange}
           error={errors.name}
           placeholder="Enter full name"
-          icon={<User className="w-5 h-5 text-gray-400" />}/>
+          icon={<User className="w-5 h-5 text-gray-400" />}
+        />
 
         <InputField
           label="Email Address *"
@@ -114,7 +98,8 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
           onChange={handleInputChange}
           error={errors.email}
           placeholder="Enter email address"
-          icon={<Mail className="w-5 h-5 text-gray-400" />}/>
+          icon={<Mail className="w-5 h-5 text-gray-400" />}
+        />
 
         <InputField
           label="Username *"
@@ -123,7 +108,7 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
           onChange={handleInputChange}
           error={errors.userName}
           placeholder="Enter username"
-          />
+        />
 
         <InputField
           label="Mobile Number *"
@@ -133,39 +118,18 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
           onChange={handleInputChange}
           error={errors.mobileNo}
           placeholder="Enter mobile number"
-          icon={<Phone className="w-5 h-5 text-gray-400" />}/>
+          icon={<Phone className="w-5 h-5 text-gray-400" />}
+        />
 
-        <div>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
-            Gender *
-          </label>
-          <select
-            name="gender"
-            value={formData.gender}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-0 ${
-              errors.gender
-                ? "border-red-300 dark:border-red-600 focus:border-red-500"
-                : "border-gray-200 dark:border-gray-600 focus:border-blue-500"
-            } text-gray-900 dark:text-white`}
-          >
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-          {errors.gender && (
-            <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
-          )}
-        </div>
-        {/* <SelectField
+        <SelectField
           label="Gender *"
-          name="genderId"
-          value={formData.countryId}
+          name="gender"
+          value={formData.gender}
           onChange={handleInputChange}
-          options={countries.map((c) => ({ value: c.id, label: c.name }))}
-          error={errors.countryId}
-        ></SelectField> */}
+          options={genders.map((c) => ({ value: c.id, label: c.name }))}
+          error={errors.gender}
+          placeholder="Select Gender *"
+        ></SelectField>
 
         <InputField
           label="Age *"
@@ -175,7 +139,7 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
           onChange={handleInputChange}
           error={errors.age}
           placeholder="Enter age"
-          />
+        />
       </div>
     </div>
   );

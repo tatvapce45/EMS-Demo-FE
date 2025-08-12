@@ -1,37 +1,20 @@
-import { Building, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import InputField from "../../ui/InputFields/InputField";
+import SelectField from "../../ui/InputFields/SelectField";
+import type { EmployeeRegistrationModel } from "../../../models/Auth/EmployeeRegistrationModel";
 
 interface FormErrors {
   [key: string]: string;
 }
 
-interface FormData {
-  name: string;
-  email: string;
-  mobileNo: string;
-  gender: string;
-  age: string;
-  salary: string;
-  address: string;
-  zipcode: string;
-  position: string;
-  userName: string;
-  hiringDate: string;
-  departmentId: string;
-  countryId: string;
-  stateId: string;
-  cityId: string;
-  reportsTo: string;
-  image: File | null;
-}
-
 interface ProfessionalInfoStepProps {
   errors: FormErrors;
-  formData: FormData;
+  formData: EmployeeRegistrationModel;
   handleInputChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => void;
+  positions: { id: string; name: string; shortName: string }[];
   departments: { id: string; name: string }[];
   managers: { id: string; name: string }[];
 }
@@ -40,6 +23,7 @@ const ProfessionalInfoStep: React.FC<ProfessionalInfoStepProps> = ({
   errors,
   formData,
   handleInputChange,
+  positions,
   departments,
   managers,
 }) => {
@@ -55,41 +39,29 @@ const ProfessionalInfoStep: React.FC<ProfessionalInfoStepProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <InputField
-          label="Position *"
+        <SelectField
+          label="Select Position *"
           name="position"
           value={formData.position}
           onChange={handleInputChange}
+          options={positions.map((c) => ({
+            value: c.shortName,
+            label: c.name,
+            shortName: c.shortName,
+          }))}
           error={errors.position}
-          placeholder="Enter your position"
-          icon={<Building className="w-5 h-5 text-gray-400" />}
+          placeholder="Select Position *"
         />
 
-        <div>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
-            Department *
-          </label>
-          <select
-            name="departmentId"
-            value={formData.departmentId}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-0 ${
-              errors.departmentId
-                ? "border-red-300 dark:border-red-600 focus:border-red-500"
-                : "border-gray-200 dark:border-gray-600 focus:border-blue-500"
-            } text-gray-900 dark:text-white`}
-          >
-            <option value="">Select Department</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
-          {errors.departmentId && (
-            <p className="text-red-500 text-sm mt-1">{errors.departmentId}</p>
-          )}
-        </div>
+        <SelectField
+          label="Select Department *"
+          name="departmentId"
+          value={formData.departmentId}
+          onChange={handleInputChange}
+          options={departments.map((c) => ({ value: c.id, label: c.name }))}
+          error={errors.departmentId}
+          placeholder="Select Department *"
+        />
 
         <InputField
           label="Salary *"
@@ -113,25 +85,16 @@ const ProfessionalInfoStep: React.FC<ProfessionalInfoStepProps> = ({
           icon={<Calendar className="w-5 h-5 text-gray-400" />}
         />
 
-        {/* Reports To */}
-        <div className="md:col-span-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
-            Reports To (Manager)
-          </label>
-          <select
-            name="reportsTo"
-            value={formData.reportsTo}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 border-2 rounded-xl bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-0 border-gray-200 dark:border-gray-600 focus:border-blue-500 text-gray-900 dark:text-white"
-          >
-            <option value="">Select Manager (Optional)</option>
-            {managers.map((manager) => (
-              <option key={manager.id} value={manager.id}>
-                {manager.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Reports To (Manager)"
+          name="reportsTo"
+          value={formData.reportsTo}
+          onChange={handleInputChange}
+          options={managers.map((c) => ({ value: c.id, label: c.name }))}
+          error={errors.reportsTo}
+          placeholder="Select Reports To(Manager) *"
+          disabled={formData.position=="CEO"}
+        ></SelectField>
       </div>
     </div>
   );

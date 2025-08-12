@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5174"; 
+const API_BASE_URL = "http://localhost:5259"; 
 
 export const login = async (loginIdentifier: string, password: string) => {
   try {
@@ -13,3 +13,5 @@ export const login = async (loginIdentifier: string, password: string) => {
     throw error.response?.data || { message: "Login failed" };
   }
 };
+
+
